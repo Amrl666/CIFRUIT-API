@@ -9,6 +9,7 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import logging
 import json
+import sys
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,108 +21,106 @@ app = Flask(__name__)
 # Comprehensive class mapping for fruits and their maturity stages
 class_mapping = {'buahnaga_busuk': 0, 'buahnaga_matang': 1, 'buahnaga_mentah': 2, 
                 'jeruk_busuk': 3, 'jeruk_matang': 4, 'jeruk_mentah': 5, 
-                'pepaya mentah': 6, 'pepaya_busuk': 7, 'pepaya_matang': 8, 
+                'pepaya_mentah': 6, 'pepaya_busuk': 7, 'pepaya_matang': 8, 
                 'pisang_busuk': 9, 'pisang_matang': 10, 'pisang_mentah': 11, 
-                'rambutan mentah': 12, 'rambutan_busuk': 13, 'rambutan_matang': 14}
+                'rambutan_mentah': 12, 'rambutan_busuk': 13, 'rambutan_matang': 14}
 
 # Database Configuration - Use environment variables in production
 DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
+    'host': os.getenv('DB_HOST', '34.101.36.201'),
     'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', ''),
+    'password': os.getenv('DB_PASSWORD', 'root123'),
     'database': os.getenv('DB_NAME', 'buah_db')
 }
 
 # Model and Database Initialization
+model = None
+db = None
+cursor = None
+
 try:
-    # Load pre-trained model with EfficientNet architecture
-    model = tf.keras.models.load_model("model.h5")
+    logger.info("Attempting to load model from path: model.h5")
     
+    # Check if model file exists
+    if not os.path.exists("model.h5"):
+        raise FileNotFoundError("Model file 'model.h5' not found in current directory")
+
+    def load_model_for_fruit():
+        model_path = "model.h5"  # Adjust the path as needed
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model file not found: {model_path}")
+        
+        # Load the model with custom objects if necessary
+        model = tf.keras.models.load_model(model_path, custom_objects={"mse": tf.keras.losses.MeanSquaredError()})
+        return model
+    
+    # Load the model
+    model = load_model_for_fruit()
+    
+    # Verify model is loaded correctly
+    if model is None:
+        raise ValueError("Model loading resulted in None object")
+    
+    logger.info(f"Model successfully loaded. Summary: {model.summary()}")
+
     # Establish database connection
     db = mysql.connector.connect(**DB_CONFIG)
     cursor = db.cursor()
+    
+    # Check if the connection is successful
+    if db.is_connected():
+        logger.info("Database connection established successfully.")
+        init_database()  # Initialize the database after successful connection
+    else:
+        logger.error("Database connection failed.")
 except Exception as e:
     logger.error(f"Initialization Error: {e}")
-    model = None
-    db = None
-    cursor = None
-
 def preprocess_image(img):
-    """
-    Praproses gambar agar sesuai dengan model MobileNetV2
-    Args:
-        img (PIL.Image): Input gambar
-    Returns:
-        numpy.ndarray: Array gambar yang sudah diproses
-    """
     try:
-        # Ubah ukuran gambar menjadi 224x224
         img = img.resize((224, 224), Image.LANCZOS)
-        
-        # Konversi ke mode RGB
         img = img.convert('RGB')
-        
-        # Konversi gambar menjadi array numpy
         img_array = image.img_to_array(img)
-        
-        # Tambahkan dimensi batch
         img_array = np.expand_dims(img_array, axis=0)
-        
-        # Gunakan preprocess_input dari MobileNetV2
         img_array = preprocess_input(img_array)
-        
         return img_array
     except Exception as e:
         logger.error(f"Image Preprocessing Error: {e}")
         raise Exception("Gambar tidak valid atau format salah")
 
 def predict_image(img):
-    """
-    Prediksi kelas buah dan tingkat kepercayaannya
-    Args:
-        img (PIL.Image): Input gambar
-    Returns:
-        tuple: (predicted class, confidence)
-    """
     try:
-        # Praproses gambar
+        logger.info(f"Image details: size={img.size}, mode={img.mode}")
+        
         img_array = preprocess_image(img)
         
-        # Prediksi menggunakan model
+        logger.info(f"Preprocessed array shape: {img_array.shape}")
+        
         predictions = model.predict(img_array)
         
-        # Ambil indeks kelas dengan confidence tertinggi
-        predicted_class_index = np.argmax(predictions)
+        if predictions is None or len(predictions[0]) == 0:
+            raise ValueError("No predictions generated")
         
-        # Ambil nama kelas berdasarkan mapping
+        predicted_class_index = np.argmax (predictions)
         predicted_class = list(class_mapping.keys())[list(class_mapping.values()).index(predicted_class_index)]
-        
-        # Ambil confidence
         confidence = predictions[0][predicted_class_index]
         
         return predicted_class, confidence
     except Exception as e:
-        logger.error(f"Prediction Error: {e}")
+        logger.error(f"Detailed Prediction Error: {e}", exc_info=True)
         raise Exception("Prediksi gagal")
 
-
 def save_prediction_to_db(image_name, predicted_class, confidence, top_predictions=None):
-    """
-    Simpan hasil prediksi ke database
-    Args:
-        image_name (str): Nama file gambar
-        predicted_class (str): Kelas yang diprediksi
-        confidence (float): Tingkat kepercayaan
-        top_predictions (dict): (Opsional) Prediksi teratas lainnya
-    """
     try:
+        if cursor is None or db is None:
+            logger.error("Database connection or cursor is not initialized.")
+            return
+        
         query = """
         INSERT INTO predictions 
         (image_name, predicted_class, confidence, top_predictions) 
         VALUES (%s, %s, %s, %s)
         """
         
-        # Jika `top_predictions` kosong, simpan JSON kosong
         top_predictions_json = json.dumps(top_predictions or {})
         
         cursor.execute(query, (image_name, predicted_class, float(confidence), top_predictions_json))
@@ -133,30 +132,34 @@ def save_prediction_to_db(image_name, predicted_class, confidence, top_predictio
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    """
-    Endpoint utama untuk prediksi
-    Returns:
-        dict: Hasil prediksi beserta rekomendasi
-    """
     if 'file' not in request.files:
-        return jsonify({"error": "Tidak ada file yang diunggah"}), 400
+        return jsonify({
+            "error": "No file uploaded",
+            "details": "Ensure you're sending a file with key 'file'"
+        }), 400
     
     file = request.files['file']
     
     if file.filename == '':
-        return jsonify({"error": "File tidak dipilih"}), 400
+        return jsonify({
+            "error": "No file selected",
+            "details": "Please choose a valid image file"
+        }), 400
     
     try:
-        # Membaca gambar dari file yang diunggah
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+        if not file.filename.lower().split('.')[-1] in allowed_extensions:
+            return jsonify({
+                "error": "Invalid file type",
+                "details": f"Allowed extensions: {', '.join(allowed_extensions)}"
+            }), 400
+        
         image_obj = Image.open(io.BytesIO(file.read()))
         
-        # Prediksi gambar
         predicted_class, confidence = predict_image(image_obj)
         
-        # Konversi confidence ke bentuk persentase
         confidence_percentage = confidence * 100
         
-        # Tambahkan rekomendasi berdasarkan prediksi
         if "matang" in predicted_class:
             recommendation = "Buah matang, segera konsumsi untuk rasa terbaik."
         elif "mentah" in predicted_class:
@@ -166,10 +169,8 @@ def predict():
         else:
             recommendation = "Tidak ada rekomendasi khusus."
         
-        # Menyimpan hasil ke database (opsional)
-        save_prediction_to_db(file.filename, predicted_class, confidence_percentage, {})  # Kosongkan `top_predictions`
+        save_prediction_to_db(file.filename, predicted_class, confidence_percentage, {})
         
-        # Mengembalikan hasil prediksi dan rekomendasi
         return jsonify({
             "image_name": file.filename,
             "predicted_class": predicted_class,
@@ -178,23 +179,40 @@ def predict():
         })
     
     except Exception as e:
-        logger.error(f"Error di endpoint prediksi: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Prediction Endpoint Error: {e}", exc_info=True)
+        return jsonify({
+            "error": "Prediction failed",
+            "details": str(e)
+        }), 500
 
-
+@app.route("/health", methods=["GET"])
+def health_check():
+    try:
+        model_status = "Loaded" if model is not None else "Not Loaded"
+        db_status = "Connected" if db is not None else "Disconnected"
+        
+        return jsonify({
+            "status": "healthy",
+            "model_status": model_status,
+            "model_path": os.path.abspath("model.h5") if os.path.exists("model.h5") else "Model file not found",
+            "database_status": db_status,
+            "supported_classes": list(class_mapping.keys()),
+            "tensorflow_version": tf.__version__,
+            "python_version": sys.version
+        }), 200
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/", methods=["GET"])
 def root():
-    """Root endpoint with basic API information"""
     return jsonify({
         "message": "Welcome to Fruit Maturity Prediction API",
         "available_routes": ["/predict"],
         "model_classes": list(class_mapping.keys())
     })
 
-# Optional database initialization script
 def init_database():
-    """Create predictions table if not exists"""
     create_table_query = """
     CREATE TABLE IF NOT EXISTS predictions (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -212,9 +230,8 @@ def init_database():
     except mysql.connector.Error as err:
         logger.error(f"Database initialization error: {err}")
 
-# Call database initialization if needed
 if cursor:
     init_database()
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=8080) 
