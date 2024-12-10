@@ -1,0 +1,72 @@
+2024-12-10 05:49:42,135 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 05:49:42,167 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 05:49:44,226 - __main__ - ERROR - Initialization Error: 2003: Can't connect to MySQL server on 'localhost:3306' (10061 No connection could be made because the target machine actively refused it)
+2024-12-10 05:50:52,076 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 05:50:52,113 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 05:50:54,164 - __main__ - ERROR - Initialization Error: 2003: Can't connect to MySQL server on 'localhost:3306' (10061 No connection could be made because the target machine actively refused it)
+2024-12-10 05:51:11,727 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 05:51:11,764 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 05:51:21,772 - __main__ - ERROR - Initialization Error: 2003: Can't connect to MySQL server on '34.101.36.201:3306' (timed out)
+2024-12-10 05:52:11,939 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 05:52:11,973 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 05:52:21,982 - __main__ - ERROR - Initialization Error: 2003: Can't connect to MySQL server on '34.101.36.201:3306' (timed out)
+2024-12-10 06:01:15,419 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 06:01:15,456 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 06:01:25,506 - __main__ - ERROR - Initialization Error: 2055: Lost connection to MySQL server at 'localhost:3306', system error: timed out
+2024-12-10 21:15:03,856 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 21:15:03,898 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 21:15:13,954 - __main__ - ERROR - Initialization Error: 2003: Can't connect to MySQL server on '34.101.36.201:3306' (timed out)
+2024-12-10 23:11:33,724 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 23:11:33,777 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 23:11:33,841 - __main__ - INFO - Database table initialized successfully
+2024-12-10 23:11:33,923 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.59:5000
+2024-12-10 23:11:33,924 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2024-12-10 23:18:55,210 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:18:55] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-10 23:18:55,527 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:18:55] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2024-12-10 23:19:17,419 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:19:17] "[33mGET /health HTTP/1.1[0m" 404 -
+2024-12-10 23:20:12,783 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:20:12] "GET /database-status HTTP/1.1" 200 -
+2024-12-10 23:22:14,684 - __main__ - INFO - Database connection closed.
+2024-12-10 23:22:35,578 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 23:22:35,630 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 23:22:35,653 - __main__ - INFO - Database table initialized successfully
+2024-12-10 23:22:35,685 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.59:5000
+2024-12-10 23:22:35,686 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2024-12-10 23:23:15,360 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:23:15] "[33mGET /heath HTTP/1.1[0m" 404 -
+2024-12-10 23:23:55,306 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:23:55] "GET /health HTTP/1.1" 200 -
+2024-12-10 23:24:37,672 - __main__ - ERROR - Database Save Error: 1932 (42S02): Table 'buah_db.predictions' doesn't exist in engine
+2024-12-10 23:24:37,674 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:24:37] "POST /predict HTTP/1.1" 200 -
+2024-12-10 23:28:07,480 - __main__ - INFO - Database connection closed.
+2024-12-10 23:28:31,824 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 23:28:31,918 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 23:28:31,978 - __main__ - INFO - Database table initialized successfully
+2024-12-10 23:28:32,043 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.59:5000
+2024-12-10 23:28:32,045 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2024-12-10 23:28:44,669 - __main__ - ERROR - Database Save Error: 1932 (42S02): Table 'buah_db.predictions' doesn't exist in engine
+2024-12-10 23:28:44,672 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:28:44] "POST /predict HTTP/1.1" 200 -
+2024-12-10 23:29:20,393 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:29:20] "[33mGET /hitstory HTTP/1.1[0m" 404 -
+2024-12-10 23:29:41,873 - __main__ - ERROR - Database query error: 1932 (42S02): Table 'buah_db.predictions' doesn't exist in engine
+2024-12-10 23:29:41,874 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:29:41] "[35m[1mGET /history HTTP/1.1[0m" 500 -
+2024-12-10 23:44:45,681 - __main__ - INFO - Database connection closed.
+2024-12-10 23:45:10,607 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-10 23:45:10,638 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-10 23:45:10,677 - __main__ - INFO - Database table initialized successfully
+2024-12-10 23:45:10,702 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.59:5000
+2024-12-10 23:45:10,703 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2024-12-10 23:45:42,187 - __main__ - ERROR - Database Save Error: 1932 (42S02): Table 'buah_db.predictions' doesn't exist in engine
+2024-12-10 23:45:42,190 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:45:42] "POST /predict HTTP/1.1" 200 -
+2024-12-10 23:46:04,691 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:46:04] "[31m[1mPOST /health HTTP/1.1[0m" 405 -
+2024-12-10 23:46:32,342 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:46:32] "GET /health HTTP/1.1" 200 -
+2024-12-10 23:46:42,967 - __main__ - ERROR - Database query error: 1932 (42S02): Table 'buah_db.predictions' doesn't exist in engine
+2024-12-10 23:46:42,968 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:46:42] "[35m[1mGET /history HTTP/1.1[0m" 500 -
