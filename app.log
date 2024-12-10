@@ -70,3 +70,31 @@
 2024-12-10 23:46:32,342 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:46:32] "GET /health HTTP/1.1" 200 -
 2024-12-10 23:46:42,967 - __main__ - ERROR - Database query error: 1932 (42S02): Table 'buah_db.predictions' doesn't exist in engine
 2024-12-10 23:46:42,968 - werkzeug - INFO - 127.0.0.1 - - [10/Dec/2024 23:46:42] "[35m[1mGET /history HTTP/1.1[0m" 500 -
+2024-12-11 00:12:06,679 - __main__ - INFO - Database connection closed.
+2024-12-11 00:13:39,939 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-11 00:13:39,970 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-11 00:13:40,590 - __main__ - INFO - Attempting to create table...
+2024-12-11 00:13:40,631 - __main__ - INFO - Database table initialized successfully
+2024-12-11 00:13:40,661 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.59:5000
+2024-12-11 00:13:40,662 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2024-12-11 00:14:23,291 - werkzeug - INFO - 127.0.0.1 - - [11/Dec/2024 00:14:23] "GET /history HTTP/1.1" 200 -
+2024-12-11 00:14:44,943 - __main__ - INFO - Prediction saved: jeruk_busuk
+2024-12-11 00:14:44,945 - werkzeug - INFO - 127.0.0.1 - - [11/Dec/2024 00:14:44] "POST /predict HTTP/1.1" 200 -
+2024-12-11 00:15:08,493 - __main__ - INFO - Prediction saved: pisang_mentah
+2024-12-11 00:15:08,495 - werkzeug - INFO - 127.0.0.1 - - [11/Dec/2024 00:15:08] "POST /predict HTTP/1.1" 200 -
+2024-12-11 00:15:21,375 - werkzeug - INFO - 127.0.0.1 - - [11/Dec/2024 00:15:21] "GET /health HTTP/1.1" 200 -
+2024-12-11 00:15:29,601 - werkzeug - INFO - 127.0.0.1 - - [11/Dec/2024 00:15:29] "GET /history HTTP/1.1" 200 -
+2024-12-11 00:23:05,381 - __main__ - INFO - Database connection closed.
+2024-12-11 00:23:21,923 - absl - WARNING - Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+2024-12-11 00:23:21,953 - __main__ - INFO - Model successfully loaded. Summary: None
+2024-12-11 00:23:22,542 - __main__ - INFO - Attempting to create table...
+2024-12-11 00:23:22,594 - __main__ - INFO - Database table initialized successfully
+2024-12-11 00:23:22,628 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.59:5000
+2024-12-11 00:23:22,629 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2024-12-11 00:23:24,290 - __main__ - INFO - Database connection closed.

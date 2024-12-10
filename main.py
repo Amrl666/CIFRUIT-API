@@ -2,12 +2,15 @@ import os
 import io
 import sys
 import json
+import uuid
+import shutil
 import atexit
 import logging
 import numpy as np
 import mysql.connector
 import tensorflow as tf
 from PIL import Image
+from datetime import datetime
 from flask import Flask, request, jsonify
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -41,9 +44,9 @@ class_mapping = {
 
 # Konfigurasi Database
 DB_CONFIG = {
-    'host': os.getenv('DB_HOST', '127.0.0.1'),
-    'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', ''),
+    'host': os.getenv('DB_HOST', '34.101.36.201'),
+    'user': os.getenv('DB_USER', 'cifruit_user'),
+    'password': os.getenv('DB_PASSWORD', 'cifruit123'),
     'database': os.getenv('DB_NAME', 'buah_db'),
     'connection_timeout': 10,
     'pool_name': "mypool",
@@ -55,6 +58,38 @@ global db, cursor, model
 db = None
 cursor = None
 model = None
+
+def get_server_status():
+    """Mendapatkan status server secara komprehensif"""
+    try:
+        # Cek koneksi database
+        db_connected = check_db_connection()
+        
+        # Cek status model
+        model_loaded = model is not None
+        
+        # Cek ruang disk
+        total, used, free = shutil.disk_usage('/')
+        
+        return {
+            "database_status": db_connected,
+            "model_status": model_loaded,
+            "disk_space": {
+                "total": total // (2**30),  # Convert to GB
+                "used": used // (2**30),
+                "free": free // (2**30),
+                "free_percentage": (free / total) * 100
+            },
+            "timestamp": datetime.now().isoformat(),
+            "supported_classes": list(class_mapping.keys())
+        }
+    except Exception as e:
+        logger.error(f"Server status check error: {e}")
+        return {
+            "database_status": False,
+            "model_status": False,
+            "error": str(e)
+        }
 
 def load_model_for_fruit():
     """Memuat model machine learning"""
@@ -78,6 +113,7 @@ def init_database():
     create_table_query = """
     CREATE TABLE IF NOT EXISTS predictions (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        prediction_id VARCHAR(36) UNIQUE,
         image_name VARCHAR(255),
         predicted_class VARCHAR(50),
         confidence FLOAT,
@@ -86,14 +122,12 @@ def init_database():
     )
     """
     try:
-        # Tambahkan print atau logging tambahan
         logger.info("Attempting to create table...")
         cursor.execute(create_table_query)
         db.commit()
         logger.info("Database table initialized successfully")
     except mysql.connector.Error as err:
         logger.error(f"Database initialization error: {err}")
-        # Cetak detail error
         print(f"Detailed Error: {err}")
         raise
 
@@ -156,8 +190,8 @@ def predict_image(img):
         logger.error(f"Prediction Error: {e}", exc_info=True)
         raise Exception("Prediksi gagal")
 
-def save_prediction_to_db(image_name, predicted_class, confidence, top_predictions=None):
-    """Menyimpan hasil prediksi ke database"""
+def save_prediction_to_db(prediction_id, image_name, predicted_class, confidence, top_predictions=None):
+    """Menyimpan hasil prediksi ke database dengan ID unik"""
     try:
         if not check_db_connection():
             logger.error("Cannot save prediction - database not connected")
@@ -165,15 +199,21 @@ def save_prediction_to_db(image_name, predicted_class, confidence, top_predictio
 
         query = """
         INSERT INTO predictions 
-        (image_name, predicted_class, confidence, top_predictions) 
-        VALUES (%s, %s, %s, %s)
+        (prediction_id, image_name, predicted_class, confidence, top_predictions) 
+        VALUES (%s, %s, %s, %s, %s)
         """
 
         top_predictions_json = json.dumps(top_predictions or {})
 
-        cursor.execute(query, (image_name, predicted_class, float(confidence), top_predictions_json))
+        cursor.execute(query, (
+            prediction_id, 
+            image_name, 
+            predicted_class, 
+            float(confidence), 
+            top_predictions_json
+        ))
         db.commit()
-        logger.info(f"Prediction saved: {predicted_class}")
+        logger.info(f"Prediction saved: {prediction_id} - {predicted_class}")
 
     except mysql.connector.Error as err:
         logger.error(f"Database Save Error: {err}")
@@ -206,15 +246,20 @@ atexit.register(close_db_connection)
 @app.route("/predict", methods=["POST"])
 def predict():
     # Periksa koneksi database
-    if not check_db_connection():
+    server_status = get_server_status()
+    if not server_status['database_status']:
         return jsonify({
             "error": "Database connection failed",
+            "server_status": server_status,
             "details": "Unable to connect to the database"
         }), 500
 
     # Pemeriksaan file
     if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+        return jsonify({
+            "error": "No file uploaded",
+            "server_status": server_status
+        }), 400
 
     file = request.files['file']
 
@@ -224,15 +269,25 @@ def predict():
     file.seek(0)
 
     if file_size > MAX_FILE_SIZE:
-        return jsonify({"error": "File size exceeds the limit of 10MB"}), 400
+        return jsonify({
+            "error": "File size exceeds the limit of 10MB",
+            "server_status": server_status
+        }), 400
 
     if not allowed_file(file.filename):
-        return jsonify({"error": "File type not allowed"}), 400
+        return jsonify({
+            "error": "File type not allowed",
+            "server_status": server_status
+        }), 400
 
     try:
         img = Image.open(io.BytesIO(file.read()))
         predicted_class, confidence = predict_image(img)
         confidence_percentage = confidence * 100
+        
+        # Generate unique prediction ID
+        prediction_id = str(uuid.uuid4())
+
         if "matang" in predicted_class:
             recommendation = "Buah matang, segera konsumsi untuk rasa terbaik."
         elif "mentah" in predicted_class:
@@ -241,17 +296,30 @@ def predict():
             recommendation = "Buah busuk, disarankan untuk dibuang atau digunakan sebagai pupuk kompos."
         else:
             recommendation = "Tidak ada rekomendasi khusus."
-        save_prediction_to_db(file.filename, predicted_class, confidence)
+        
+        # Simpan prediksi dengan ID baru
+        save_prediction_to_db(
+            prediction_id=prediction_id,
+            image_name=file.filename, 
+            predicted_class=predicted_class, 
+            confidence=confidence
+        )
 
         return jsonify({
+            "prediction_id": prediction_id,
             "image_name": file.filename,
             "predicted_class": predicted_class,
             "confidence": f"{confidence_percentage:.2f}%",
-            "recommendation": recommendation
+            "recommendation": recommendation,
+            "server_status": server_status
         }), 200
     except Exception as e:
         logger.error(f"Error during prediction: {e}")
-        return jsonify({"error": "Prediction failed", "details": str(e)}), 500
+        return jsonify({
+            "error": "Prediction failed", 
+            "details": str(e),
+            "server_status": server_status
+        }), 500
 
 def allowed_file(filename):
     """Memeriksa apakah ekstensi file diizinkan"""
@@ -261,39 +329,41 @@ def allowed_file(filename):
 @app.route("/database-status", methods=["GET"])
 def database_status():
     try:
-        if check_db_connection():
-            return jsonify({"status": "connected"}), 200
+        server_status = get_server_status()
+        if server_status['database_status']:
+            return jsonify(server_status), 200
         else:
-            return jsonify({"status": "disconnected"}), 500
+            return jsonify(server_status), 500
     except Exception as e:
         logger.error(f"Database status check failed: {e}")
-        return jsonify({"status": "error"}), 500
-    
+        return jsonify({
+            "status": "error", 
+            "details": str(e)
+        }), 500
 
 @app.route("/health", methods=["GET"])
 def health_check():
     try:
-        model_status = "Loaded" if model is not None else "Not Loaded"
-        db_status = "Connected" if db is not None else "Disconnected"
+        server_status = get_server_status()
         
         return jsonify({
-            "status": "healthy",
-            "model_status": model_status,
-            "model_path": os.path.abspath("model.h5") if os.path.exists("model.h5") else "Model file not found",
-            "database_status": db_status,
-            "supported_classes": list(class_mapping.keys()),
-            "tensorflow_version": tf.__version__,
-            "python_version": sys.version
+            "status": "healthy" if server_status['database_status'] and server_status['model_status'] else "unhealthy",
+            "details": server_status
         }), 200
     except Exception as e:
         logger.error(f"Health check error: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({
+            "status": "error", 
+            "message": str(e)
+        }), 500
 
 @app.route("/history", methods=["GET"])
 def get_prediction_history():
-    if not check_db_connection():
+    server_status = get_server_status()
+    if not server_status['database_status']:
         return jsonify({
             "error": "Database connection failed",
+            "server_status": server_status,
             "details": "Unable to connect to the database"
         }), 500
     
@@ -302,7 +372,7 @@ def get_prediction_history():
         limit = request.args.get('limit', default=10, type=int)
         
         query = """
-        SELECT image_name, predicted_class, confidence, prediction_time
+        SELECT prediction_id, image_name, predicted_class, confidence, prediction_time
         FROM predictions
         ORDER BY prediction_time DESC
         LIMIT %s
@@ -314,18 +384,28 @@ def get_prediction_history():
         # Mengubah format datetime menjadi string untuk JSON serialization
         for item in history:
             item['prediction_time'] = item['prediction_time'].isoformat()
+            item['confidence'] = f"{item['confidence']*100:.2f}%"
         
         return jsonify({
             "history": history,
-            "count": len(history)
+            "count": len(history),
+            "server_status": server_status
         }), 200
     
     except mysql.connector.Error as err:
         logger.error(f"Database query error: {err}")
-        return jsonify({"error": "Database query failed", "details": str(err)}), 500
+        return jsonify({
+            "error": "Database query failed", 
+            "details": str(err),
+            "server_status": server_status
+        }), 500
     except Exception as e:
         logger.error(f"Unexpected error in history route: {e}")
-        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+        return jsonify({
+            "error": "Internal server error", 
+            "details": str(e),
+            "server_status": server_status
+        }), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
