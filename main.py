@@ -310,8 +310,7 @@ def predict():
             "image_name": file.filename,
             "predicted_class": predicted_class,
             "confidence": f"{confidence_percentage:.2f}%",
-            "recommendation": recommendation,
-            "server_status": server_status
+            "recommendation": recommendation
         }), 200
     except Exception as e:
         logger.error(f"Error during prediction: {e}")
@@ -324,6 +323,23 @@ def predict():
 def allowed_file(filename):
     """Memeriksa apakah ekstensi file diizinkan"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route("/", methods=["GET"])
+def root():
+    server_status = get_server_status()
+    return jsonify({
+        "message": "Selamat datang di Fruit Maturity Prediction API!",
+        "description": "API ini dirancang untuk memprediksi tingkat kematangan buah menggunakan gambar yang Anda unggah.",
+        "available_routes": [
+            {"route": "/predict", "method": "POST", "description": "Unggah gambar untuk mendapatkan prediksi kematangan buah."},
+            {"route": "/health", "method": "GET", "description": "Periksa status kesehatan server (model & database)."},
+            {"route": "/history", "method": "GET", "description": "Dapatkan riwayat prediksi yang tersimpan di database."}
+        ],
+        "server_status": server_status,
+        "model_classes": list(class_mapping.keys()),
+        "note": "Pastikan Anda mengunggah file dengan format yang didukung (PNG, JPG, JPEG, GIF) dengan ukuran maksimal 10MB."
+    })
+
 
 # Route Status Database
 @app.route("/database-status", methods=["GET"])
@@ -388,8 +404,7 @@ def get_prediction_history():
         
         return jsonify({
             "history": history,
-            "count": len(history),
-            "server_status": server_status
+            "count": len(history)
         }), 200
     
     except mysql.connector.Error as err:
